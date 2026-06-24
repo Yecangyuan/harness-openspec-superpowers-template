@@ -6,8 +6,10 @@ Reusable bootstrap template for the `Harness + OpenSpec + Superpowers` workflow.
 
 - `harness/bin/*`: repository workflow commands
 - `harness/workflows/*`: shared workflow documentation
+- `harness/skills/*`: project-local multi-review, knowledge, and tech-proposal workflows
 - `openspec/config.yaml`: project-local OpenSpec configuration
 - `.codex/`, `.claude/`, `.cursor/`: thin agent/client adapters
+- `.claude/settings.json` and `.claude/hooks/*`: project-level Claude Code workflow reminders
 - `docs/superpowers/specs` and `docs/superpowers/plans`: planning document homes
 - `AGENTS.md` and `HARNESS.md`: repository entry instructions
 

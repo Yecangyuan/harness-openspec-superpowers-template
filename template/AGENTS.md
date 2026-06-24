@@ -19,6 +19,9 @@ The Harness actions are:
 - `sync [change-name]`
 - `archive [change-name] [flags]`
 - `verify`
+- `multi-review` skill for completed feature modules
+- `compound-knowledge` skill for durable project learnings
+- `tech-proposal` skill for team-reviewable OpenSpec designs
 
 ## Tool Roles
 
@@ -31,3 +34,5 @@ The Harness actions are:
 For new feature work, do not go directly from brainstorming to Superpowers `writing-plans`. First route through Harness and create or inspect the OpenSpec change when appropriate.
 
 The `.codex/skills/openspec-*` files are thin adapters. Treat `HARNESS.md`, `harness/bin/*`, and `harness/workflows/*.md` as the source of truth.
+
+The `.codex/skills/multi-review`, `.codex/skills/compound-knowledge`, and `.codex/skills/tech-proposal` entries are also thin adapters. Treat `harness/skills/*` as the source of truth for those workflows.

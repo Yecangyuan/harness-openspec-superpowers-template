@@ -7,6 +7,7 @@
 ```text
 harness/
 ├── bin/         # 统一命令入口
+├── skills/      # project-local review/knowledge/proposal skill truth
 ├── lib/         # 共享 shell helper
 ├── tests/       # 自包含 shell tests
 └── workflows/   # propose/apply/archive/sync/explore/verify 共享说明
@@ -21,6 +22,7 @@ harness/
 - `HARNESS.md`
 - `harness/bin/*`
 - `harness/workflows/*.md`
+- `harness/skills/*.md`
 
 再同步客户端薄适配。
 
@@ -31,6 +33,7 @@ harness/
 - 指向 `HARNESS.md`
 - 要求先运行 `./harness/bin/check`
 - 指向匹配的 `harness/workflows/*.md`
+- 指向匹配的 `harness/skills/*.md`
 
 ### 3. Shared shell logic stays in `lib/`
 
@@ -56,3 +59,10 @@ harness/
 3. 更新 `HARNESS.md`
 4. 更新客户端薄适配
 5. 更新 `harness/tests/test_harness.sh`
+
+新增跨客户端 skill 时，按这个顺序：
+
+1. 新增或更新 `harness/skills/<skill-name>/SKILL.md`
+2. 只在 `.claude/skills`、`.cursor/skills`、`.codex/skills` 中放薄适配
+3. 如有流程说明，新增 `harness/workflows/<skill-name>.md`
+4. 更新安装测试

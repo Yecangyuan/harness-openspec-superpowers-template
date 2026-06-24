@@ -36,8 +36,17 @@ assert_not_contains() {
   fi
 }
 
+existing_target="$(mktemp -d "${TMPDIR:-/tmp}/harness-template-existing.XXXXXX")"
 target_dir="$(mktemp -d "${TMPDIR:-/tmp}/harness-template-install.XXXXXX")"
-trap 'rm -rf "$target_dir"' EXIT
+trap 'rm -rf "$existing_target" "$target_dir"' EXIT
+
+mkdir -p "$existing_target/.claude"
+printf '{}\n' > "$existing_target/.claude/settings.json"
+
+if bash "$ROOT_DIR/install.sh" --target "$existing_target" >/tmp/harness-template-existing.out 2>&1; then
+  fail "install should refuse to overwrite existing .claude/settings.json"
+fi
+grep -Fq ".claude/settings.json" /tmp/harness-template-existing.out || fail "overwrite refusal should mention .claude/settings.json"
 
 cat >"$target_dir/.gitignore" <<'EOF'
 bin/
@@ -55,7 +64,30 @@ assert_file "$target_dir/openspec/config.yaml"
 assert_file "$target_dir/.codex/skills/harness/SKILL.md"
 assert_file "$target_dir/.claude/commands/opsx/verify.md"
 assert_file "$target_dir/.cursor/commands/opsx-verify.md"
+assert_file "$target_dir/.claude/settings.json"
+assert_executable "$target_dir/.claude/hooks/workflow-reminder.sh"
+assert_file "$target_dir/harness/skills/multi-review/SKILL.md"
+assert_file "$target_dir/harness/skills/multi-review/references/correctness-reviewer.md"
+assert_file "$target_dir/harness/skills/multi-review/references/testing-reviewer.md"
+assert_file "$target_dir/harness/skills/multi-review/references/security-reviewer.md"
+assert_file "$target_dir/harness/skills/multi-review/references/performance-reviewer.md"
+assert_file "$target_dir/harness/skills/multi-review/references/adversarial-reviewer.md"
+assert_file "$target_dir/harness/skills/multi-review/references/architecture-strategist.md"
+assert_file "$target_dir/harness/skills/compound-knowledge/SKILL.md"
+assert_file "$target_dir/harness/skills/tech-proposal/SKILL.md"
+assert_file "$target_dir/.claude/skills/multi-review/SKILL.md"
+assert_file "$target_dir/.claude/skills/compound-knowledge/SKILL.md"
+assert_file "$target_dir/.claude/skills/tech-proposal/SKILL.md"
+assert_file "$target_dir/.codex/skills/multi-review/SKILL.md"
+assert_file "$target_dir/.codex/skills/compound-knowledge/SKILL.md"
+assert_file "$target_dir/.codex/skills/tech-proposal/SKILL.md"
+assert_file "$target_dir/.cursor/skills/multi-review/SKILL.md"
+assert_file "$target_dir/.cursor/skills/compound-knowledge/SKILL.md"
+assert_file "$target_dir/.cursor/skills/tech-proposal/SKILL.md"
 assert_file "$target_dir/harness/workflows/verify.md"
+assert_file "$target_dir/harness/workflows/multi-review.md"
+assert_file "$target_dir/harness/workflows/compound-knowledge.md"
+assert_file "$target_dir/harness/workflows/tech-proposal.md"
 assert_file "$target_dir/harness/tests/test_harness.sh"
 assert_executable "$target_dir/harness/bin/check"
 assert_executable "$target_dir/harness/bin/status"
@@ -66,6 +98,10 @@ assert_dir "$target_dir/docs/superpowers/plans"
 
 assert_contains "$target_dir/.codex/skills/harness/SKILL.md" "DemoProject"
 assert_contains "$target_dir/openspec/config.yaml" "Android Kotlin Gradle"
+assert_contains "$target_dir/.claude/settings.json" "workflow-reminder.sh"
+assert_contains "$target_dir/harness/skills/multi-review/SKILL.md" "Multi-Persona Code Review"
+assert_contains "$target_dir/harness/skills/compound-knowledge/SKILL.md" "knowledge/index.md"
+assert_contains "$target_dir/harness/skills/tech-proposal/SKILL.md" "tech-proposal.md"
 old_project_name="LegacyProjectName"
 old_local_path="/private/local/path"
 assert_not_contains "$target_dir/.codex/skills/harness/SKILL.md" "$old_project_name"
