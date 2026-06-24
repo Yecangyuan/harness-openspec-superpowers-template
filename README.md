@@ -60,6 +60,36 @@ cd /path/to/project
 ./harness/bin/opsx verify
 ```
 
+## Upgrade An Installed Project
+
+When this template repository changes, projects that already installed it do not update automatically. Use `--upgrade` from the updated template checkout:
+
+```bash
+./install.sh \
+  --target /path/to/project \
+  --project-name "MyProject" \
+  --tech-stack "Android Kotlin Gradle" \
+  --upgrade
+```
+
+Upgrade behavior:
+
+- Adds new managed Harness files that are missing from the target project.
+- Updates managed files that still match the previously installed template version.
+- Keeps locally modified managed files unchanged and writes copies under `.harness-template-backups/<timestamp>/`.
+- Writes `.harness-template-version` with the template commit, install time, project metadata, and managed file hashes.
+
+After upgrading:
+
+```bash
+cd /path/to/project
+git diff
+./harness/bin/check
+./harness/bin/opsx verify
+```
+
+Review any backups before deleting them. If you intentionally want to replace local Harness edits, use `--force` instead of `--upgrade`.
+
 ## What This Installs
 
 - `harness/bin/*`: repository workflow commands
@@ -70,6 +100,7 @@ cd /path/to/project
 - `.claude/settings.json` and `.claude/hooks/*`: project-level Claude Code workflow reminders
 - `docs/superpowers/specs` and `docs/superpowers/plans`: planning document homes
 - `AGENTS.md`, `CLAUDE.md`, and `HARNESS.md`: repository entry instructions
+- `.harness-template-version`: installed template metadata and managed file hashes
 
 ## Install Into A Project
 

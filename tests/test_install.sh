@@ -36,6 +36,11 @@ assert_not_contains() {
   fi
 }
 
+assert_glob_exists() {
+  local pattern="$1"
+  compgen -G "$pattern" >/dev/null || fail "missing match: $pattern"
+}
+
 existing_target="$(mktemp -d "${TMPDIR:-/tmp}/harness-template-existing.XXXXXX")"
 target_dir="$(mktemp -d "${TMPDIR:-/tmp}/harness-template-install.XXXXXX")"
 trap 'rm -rf "$existing_target" "$target_dir"' EXIT
@@ -70,6 +75,7 @@ bash "$ROOT_DIR/install.sh" \
 assert_file "$target_dir/HARNESS.md"
 assert_file "$target_dir/AGENTS.md"
 assert_file "$target_dir/CLAUDE.md"
+assert_file "$target_dir/.harness-template-version"
 assert_file "$target_dir/openspec/config.yaml"
 assert_file "$target_dir/.codex/skills/harness/SKILL.md"
 assert_file "$target_dir/.claude/commands/opsx/verify.md"
@@ -109,6 +115,8 @@ assert_dir "$target_dir/docs/superpowers/plans"
 assert_contains "$target_dir/.codex/skills/harness/SKILL.md" "DemoProject"
 assert_contains "$target_dir/CLAUDE.md" "@AGENTS.md"
 assert_contains "$target_dir/CLAUDE.md" "Claude Code"
+assert_contains "$target_dir/.harness-template-version" "template_commit:"
+assert_contains "$target_dir/.gitignore" ".harness-template-backups/"
 assert_contains "$target_dir/openspec/config.yaml" "Android Kotlin Gradle"
 assert_contains "$target_dir/.claude/settings.json" "workflow-reminder.sh"
 assert_contains "$target_dir/harness/skills/multi-review/SKILL.md" "Multi-Persona Code Review"
@@ -134,5 +142,24 @@ assert_not_contains "$target_dir/AGENTS.md" "$old_local_path"
 
 grep -Fq "HARNESS VERIFY" /tmp/harness-template-verify.out || fail "verify output missing banner"
 grep -Fq "OpenSpec Specs" /tmp/harness-template-verify.out || fail "verify output missing specs section"
+
+cp "$target_dir/CLAUDE.md" /tmp/harness-template-original-claude.md
+printf '# User customized Claude instructions\n' > "$target_dir/CLAUDE.md"
+printf '# User customized AGENTS instructions\n' > "$target_dir/AGENTS.md"
+printf '# stale verify adapter\n' > "$target_dir/.claude/commands/opsx/verify.md"
+
+bash "$ROOT_DIR/install.sh" \
+  --target "$target_dir" \
+  --project-name "DemoProject" \
+  --tech-stack "Android Kotlin Gradle" \
+  --upgrade
+
+assert_contains "$target_dir/CLAUDE.md" "User customized Claude instructions"
+assert_contains "$target_dir/AGENTS.md" "User customized AGENTS instructions"
+assert_glob_exists "$target_dir/.harness-template-backups/"'*'"/CLAUDE.md"
+assert_glob_exists "$target_dir/.harness-template-backups/"'*'"/AGENTS.md"
+assert_contains "$target_dir/.claude/commands/opsx/verify.md" "stale verify adapter"
+assert_contains "$target_dir/.harness-template-version" "installed_at:"
+assert_glob_exists "$target_dir/.harness-template-backups/"'*'"/.claude/commands/opsx/verify.md"
 
 echo "PASS: install.sh creates a runnable Harness template"

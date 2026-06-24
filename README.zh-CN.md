@@ -60,6 +60,36 @@ cd /path/to/project
 ./harness/bin/opsx verify
 ```
 
+## 升级已安装的项目
+
+这个模板仓库更新后，已经安装过的项目不会自动同步。请在更新后的模板仓库中运行 `--upgrade`：
+
+```bash
+./install.sh \
+  --target /path/to/project \
+  --project-name "MyProject" \
+  --tech-stack "Android Kotlin Gradle" \
+  --upgrade
+```
+
+升级行为：
+
+- 给目标项目补上缺失的托管 Harness 文件。
+- 更新仍然等于上次安装版本的托管文件。
+- 保留用户本地改过的托管文件，并把副本写入 `.harness-template-backups/<timestamp>/`。
+- 写入 `.harness-template-version`，记录模板 commit、安装时间、项目元数据和托管文件 hash。
+
+升级后检查：
+
+```bash
+cd /path/to/project
+git diff
+./harness/bin/check
+./harness/bin/opsx verify
+```
+
+删除备份前先人工确认。如果你明确要覆盖本地 Harness 改动，使用 `--force`，不要使用 `--upgrade`。
+
 ## 这个模板会安装什么？
 
 - `harness/bin/*`：仓库级工作流命令
@@ -70,6 +100,7 @@ cd /path/to/project
 - `.claude/settings.json` 和 `.claude/hooks/*`：项目级 Claude Code 工作流提醒
 - `docs/superpowers/specs` 和 `docs/superpowers/plans`：规划文档目录
 - `AGENTS.md`、`CLAUDE.md` 和 `HARNESS.md`：仓库入口说明
+- `.harness-template-version`：已安装模板元数据和托管文件 hash
 
 ## 安装到项目
 
