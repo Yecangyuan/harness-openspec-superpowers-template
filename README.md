@@ -1,5 +1,7 @@
 # Harness OpenSpec Superpowers Template
 
+[中文说明](README.zh-CN.md)
+
 Reusable bootstrap template for the `Harness + OpenSpec + Superpowers` workflow.
 
 ## Is This Ready Out Of The Box?
