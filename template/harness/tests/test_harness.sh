@@ -48,6 +48,16 @@ assert_adapter_points_to() {
   assert_contains "$content" "harness/workflows/$workflow.md" "$file workflow link"
 }
 
+assert_skill_adapter_points_to() {
+  local file="$1"
+  local skill="$2"
+  local content
+
+  content="$(<"$ROOT_DIR/$file")"
+  assert_contains "$content" "HARNESS.md" "$file harness link"
+  assert_contains "$content" "harness/skills/$skill/SKILL.md" "$file skill link"
+}
+
 find_archived_change() {
   local change_name="$1"
   if [[ ! -d "$ROOT_DIR/openspec/changes/archive" ]]; then
@@ -163,8 +173,21 @@ archive_hit="$(find_archived_change "$temp_change")"
 [[ -f "$ROOT_DIR/harness/workflows/propose.md" ]] || fail "propose workflow missing"
 [[ -f "$ROOT_DIR/harness/workflows/sync.md" ]] || fail "sync workflow missing"
 [[ -f "$ROOT_DIR/harness/workflows/verify.md" ]] || fail "verify workflow missing"
+[[ -f "$ROOT_DIR/harness/workflows/multi-review.md" ]] || fail "multi-review workflow missing"
+[[ -f "$ROOT_DIR/harness/workflows/compound-knowledge.md" ]] || fail "compound-knowledge workflow missing"
+[[ -f "$ROOT_DIR/harness/workflows/tech-proposal.md" ]] || fail "tech-proposal workflow missing"
+[[ -f "$ROOT_DIR/harness/skills/multi-review/SKILL.md" ]] || fail "multi-review skill missing"
+[[ -f "$ROOT_DIR/harness/skills/multi-review/references/correctness-reviewer.md" ]] || fail "correctness reviewer missing"
+[[ -f "$ROOT_DIR/harness/skills/multi-review/references/testing-reviewer.md" ]] || fail "testing reviewer missing"
+[[ -f "$ROOT_DIR/harness/skills/multi-review/references/security-reviewer.md" ]] || fail "security reviewer missing"
+[[ -f "$ROOT_DIR/harness/skills/multi-review/references/performance-reviewer.md" ]] || fail "performance reviewer missing"
+[[ -f "$ROOT_DIR/harness/skills/multi-review/references/adversarial-reviewer.md" ]] || fail "adversarial reviewer missing"
+[[ -f "$ROOT_DIR/harness/skills/multi-review/references/architecture-strategist.md" ]] || fail "architecture reviewer missing"
+[[ -f "$ROOT_DIR/harness/skills/compound-knowledge/SKILL.md" ]] || fail "compound-knowledge skill missing"
+[[ -f "$ROOT_DIR/harness/skills/tech-proposal/SKILL.md" ]] || fail "tech-proposal skill missing"
 [[ -f "$ROOT_DIR/harness/bin/verify" ]] || fail "verify command missing"
 [[ -f "$ROOT_DIR/.codex/skills/harness/SKILL.md" ]] || fail "codex harness skill missing"
+[[ -x "$ROOT_DIR/.claude/hooks/workflow-reminder.sh" ]] || fail "workflow reminder hook missing or not executable"
 assert_not_git_ignored "harness/bin/verify"
 assert_not_git_ignored ".cursor/commands/opsx-verify.md"
 
@@ -214,5 +237,26 @@ assert_adapter_points_to ".codex/skills/openspec-archive-change/SKILL.md" "archi
 assert_adapter_points_to ".codex/skills/openspec-explore/SKILL.md" "explore"
 assert_adapter_points_to ".codex/skills/openspec-propose/SKILL.md" "propose"
 assert_adapter_points_to ".codex/skills/openspec-sync-specs/SKILL.md" "sync"
+
+assert_skill_adapter_points_to ".claude/skills/multi-review/SKILL.md" "multi-review"
+assert_skill_adapter_points_to ".claude/skills/compound-knowledge/SKILL.md" "compound-knowledge"
+assert_skill_adapter_points_to ".claude/skills/tech-proposal/SKILL.md" "tech-proposal"
+assert_skill_adapter_points_to ".cursor/skills/multi-review/SKILL.md" "multi-review"
+assert_skill_adapter_points_to ".cursor/skills/compound-knowledge/SKILL.md" "compound-knowledge"
+assert_skill_adapter_points_to ".cursor/skills/tech-proposal/SKILL.md" "tech-proposal"
+assert_skill_adapter_points_to ".codex/skills/multi-review/SKILL.md" "multi-review"
+assert_skill_adapter_points_to ".codex/skills/compound-knowledge/SKILL.md" "compound-knowledge"
+assert_skill_adapter_points_to ".codex/skills/tech-proposal/SKILL.md" "tech-proposal"
+
+hook_settings="$(<"$ROOT_DIR/.claude/settings.json")"
+assert_contains "$hook_settings" "Stop" "claude hook stop event"
+assert_contains "$hook_settings" "workflow-reminder.sh" "claude hook command"
+
+if [[ ! -e "$ROOT_DIR/knowledge" ]]; then
+  mkdir "$ROOT_DIR/knowledge"
+  hook_output="$(CLAUDE_PROJECT_DIR="$ROOT_DIR" "$ROOT_DIR/.claude/hooks/workflow-reminder.sh" 2>&1 || true)"
+  assert_contains "$hook_output" "knowledge/index.md is missing" "workflow reminder knowledge output"
+  rmdir "$ROOT_DIR/knowledge"
+fi
 
 echo "PASS: harness common helpers"

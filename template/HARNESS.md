@@ -46,6 +46,7 @@
 - 环境预检
 - 状态汇总
 - 仓库级共享 workflow 文档
+- 仓库级共享 skill 文档
 - `Claude` / `Cursor` / `Codex` 的薄适配基线
 
 ### OpenSpec
@@ -63,6 +64,14 @@
 - 设计 spec
 - 实施 plan
 - 执行纪律
+
+### Quality And Knowledge Skills
+
+负责：
+
+- `multi-review`：功能模块完成后的多角色宏审查
+- `compound-knowledge`：把重要经验沉淀到 `knowledge/index.md` 和主题文件
+- `tech-proposal`：从 OpenSpec change 生成跨团队技术方案
 
 ## Standard Path
 
@@ -99,6 +108,9 @@ Shared workflow truth lives in:
 - `harness/workflows/sync.md`
 - `harness/workflows/explore.md`
 - `harness/workflows/verify.md`
+- `harness/workflows/multi-review.md`
+- `harness/workflows/compound-knowledge.md`
+- `harness/workflows/tech-proposal.md`
 
 `opsx` 现在会直接执行对应的 `OpenSpec` CLI 流程，不再只是打印建议命令。workflow 文档仍然是流程真相，用于解释动作边界、失败处理和手动兜底路径。
 
@@ -115,11 +127,16 @@ Codex 额外有两层仓库级约束：
 - `.codex/skills/harness/SKILL.md`：让 Codex 在本仓库任务中优先触发 Harness。
 - `AGENTS.md`：让 Codex 进入仓库时知道本项目的第一入口是 Harness。
 
+`multi-review`、`compound-knowledge`、`tech-proposal` 的客户端 skill 都是薄适配器。完整规则在 `harness/skills/`。
+
+Claude Code 的项目级 Stop Hook 在 `.claude/settings.json` 中声明，脚本位于 `.claude/hooks/workflow-reminder.sh`。它只做工作流提醒，不写全局 `~/.claude`，也不阻塞停止。
+
 如果要改流程，先改：
 
 - `HARNESS.md`
 - `harness/README.md`
 - `harness/workflows/*.md`
+- `harness/skills/*.md`
 - `harness/bin/*`
 
 不要先改客户端适配器。

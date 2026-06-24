@@ -66,7 +66,24 @@ if [[ -z "$project_name" ]]; then
 fi
 
 if [[ "$force" -ne 1 ]]; then
-  for path in HARNESS.md AGENTS.md harness openspec/config.yaml .codex/skills/harness; do
+  for path in \
+    HARNESS.md \
+    AGENTS.md \
+    harness \
+    openspec/config.yaml \
+    .claude/settings.json \
+    .claude/hooks/workflow-reminder.sh \
+    .claude/skills/multi-review \
+    .claude/skills/compound-knowledge \
+    .claude/skills/tech-proposal \
+    .codex/skills/harness \
+    .codex/skills/multi-review \
+    .codex/skills/compound-knowledge \
+    .codex/skills/tech-proposal \
+    .cursor/skills/multi-review \
+    .cursor/skills/compound-knowledge \
+    .cursor/skills/tech-proposal
+  do
     if [[ -e "$target_dir/$path" ]]; then
       echo "Refusing to overwrite existing $path; rerun with --force if intended." >&2
       exit 1
@@ -101,6 +118,7 @@ while IFS= read -r -d '' file; do
 done < <(find "$target_dir" -type f ! -path '*/.git/*' -print0)
 
 chmod +x "$target_dir"/harness/bin/* 2>/dev/null || true
+chmod +x "$target_dir"/.claude/hooks/* 2>/dev/null || true
 
 gitignore_path="$target_dir/.gitignore"
 if [[ ! -f "$gitignore_path" ]]; then
