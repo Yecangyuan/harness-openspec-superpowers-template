@@ -69,6 +69,7 @@ if [[ "$force" -ne 1 ]]; then
   for path in \
     HARNESS.md \
     AGENTS.md \
+    CLAUDE.md \
     harness \
     openspec/config.yaml \
     .claude/settings.json \

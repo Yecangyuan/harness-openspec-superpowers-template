@@ -69,7 +69,7 @@ cd /path/to/project
 - `.codex/`, `.claude/`, `.cursor/`: thin agent/client adapters
 - `.claude/settings.json` and `.claude/hooks/*`: project-level Claude Code workflow reminders
 - `docs/superpowers/specs` and `docs/superpowers/plans`: planning document homes
-- `AGENTS.md` and `HARNESS.md`: repository entry instructions
+- `AGENTS.md`, `CLAUDE.md`, and `HARNESS.md`: repository entry instructions
 
 ## Install Into A Project
 

@@ -48,6 +48,15 @@ if bash "$ROOT_DIR/install.sh" --target "$existing_target" >/tmp/harness-templat
 fi
 grep -Fq ".claude/settings.json" /tmp/harness-template-existing.out || fail "overwrite refusal should mention .claude/settings.json"
 
+rm -rf "$existing_target"
+existing_target="$(mktemp -d "${TMPDIR:-/tmp}/harness-template-existing.XXXXXX")"
+printf '# Existing Claude instructions\n' > "$existing_target/CLAUDE.md"
+
+if bash "$ROOT_DIR/install.sh" --target "$existing_target" >/tmp/harness-template-existing-claude.out 2>&1; then
+  fail "install should refuse to overwrite existing CLAUDE.md"
+fi
+grep -Fq "CLAUDE.md" /tmp/harness-template-existing-claude.out || fail "overwrite refusal should mention CLAUDE.md"
+
 cat >"$target_dir/.gitignore" <<'EOF'
 bin/
 /.cursor/
@@ -60,6 +69,7 @@ bash "$ROOT_DIR/install.sh" \
 
 assert_file "$target_dir/HARNESS.md"
 assert_file "$target_dir/AGENTS.md"
+assert_file "$target_dir/CLAUDE.md"
 assert_file "$target_dir/openspec/config.yaml"
 assert_file "$target_dir/.codex/skills/harness/SKILL.md"
 assert_file "$target_dir/.claude/commands/opsx/verify.md"
@@ -97,6 +107,8 @@ assert_dir "$target_dir/docs/superpowers/specs"
 assert_dir "$target_dir/docs/superpowers/plans"
 
 assert_contains "$target_dir/.codex/skills/harness/SKILL.md" "DemoProject"
+assert_contains "$target_dir/CLAUDE.md" "@AGENTS.md"
+assert_contains "$target_dir/CLAUDE.md" "Claude Code"
 assert_contains "$target_dir/openspec/config.yaml" "Android Kotlin Gradle"
 assert_contains "$target_dir/.claude/settings.json" "workflow-reminder.sh"
 assert_contains "$target_dir/harness/skills/multi-review/SKILL.md" "Multi-Persona Code Review"

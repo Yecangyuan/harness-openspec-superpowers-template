@@ -69,7 +69,7 @@ cd /path/to/project
 - `.codex/`、`.claude/`、`.cursor/`：轻量客户端适配器
 - `.claude/settings.json` 和 `.claude/hooks/*`：项目级 Claude Code 工作流提醒
 - `docs/superpowers/specs` 和 `docs/superpowers/plans`：规划文档目录
-- `AGENTS.md` 和 `HARNESS.md`：仓库入口说明
+- `AGENTS.md`、`CLAUDE.md` 和 `HARNESS.md`：仓库入口说明
 
 ## 安装到项目
 
