@@ -1,0 +1,9 @@
+
+# Harness/OpenSpec/Superpowers workflow files
+!harness/bin/
+!harness/bin/**
+!/.cursor/
+!/.cursor/commands/
+!/.cursor/commands/**
+!/.cursor/skills/
+!/.cursor/skills/**

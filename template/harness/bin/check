@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/lib/common.sh"
+
+repo_root="$(harness_repo_root)"
+failures=0
+warnings=0
+
+pass() {
+  printf 'PASS  %s\n' "$1"
+}
+
+warn() {
+  printf 'WARN  %s\n' "$1"
+  warnings=$((warnings + 1))
+}
+
+fail_line() {
+  printf 'FAIL  %s\n' "$1"
+  failures=$((failures + 1))
+}
+
+check_file() {
+  local path="$1"
+  local label="$2"
+  if [[ -f "$path" ]]; then
+    pass "$label present"
+  else
+    fail_line "$label missing"
+  fi
+}
+
+check_dir() {
+  local path="$1"
+  local label="$2"
+  if [[ -d "$path" ]]; then
+    pass "$label present"
+  else
+    fail_line "$label missing"
+  fi
+}
+
+check_executable() {
+  local path="$1"
+  local label="$2"
+  if [[ -x "$path" ]]; then
+    pass "$label executable"
+  else
+    fail_line "$label missing or not executable"
+  fi
+}
+
+printf 'HARNESS CHECK\n'
+printf 'Repo Root: %s\n' "$repo_root"
+
+check_file "$repo_root/HARNESS.md" "HARNESS.md"
+check_dir "$repo_root/harness/workflows" "harness/workflows"
+check_file "$repo_root/harness/workflows/verify.md" "harness/workflows/verify.md"
+check_executable "$repo_root/harness/bin/check" "harness/bin/check"
+check_executable "$repo_root/harness/bin/status" "harness/bin/status"
+check_executable "$repo_root/harness/bin/opsx" "harness/bin/opsx"
+check_executable "$repo_root/harness/bin/verify" "harness/bin/verify"
+check_file "$repo_root/openspec/config.yaml" "openspec/config.yaml"
+check_dir "$repo_root/docs/superpowers/specs" "docs/superpowers/specs"
+check_dir "$repo_root/docs/superpowers/plans" "docs/superpowers/plans"
+
+if harness_check_optional_cmd rtk; then
+  pass "rtk available"
+else
+  warn "rtk unavailable"
+fi
+
+if harness_check_required_cmd openspec >/dev/null 2>&1; then
+  pass "openspec available"
+else
+  fail_line "openspec unavailable"
+fi
+
+printf 'Summary: %s failure(s), %s warning(s)\n' "$failures" "$warnings"
+
+if [[ "$failures" -gt 0 ]]; then
+  exit 1
+fi

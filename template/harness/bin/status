@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/lib/common.sh"
+
+repo_root="$(harness_repo_root)"
+
+present_status() {
+  local path="$1"
+  local type="$2"
+  if [[ "$type" == "file" && -f "$path" ]]; then
+    printf 'present'
+  elif [[ "$type" == "dir" && -d "$path" ]]; then
+    printf 'present'
+  else
+    printf 'missing'
+  fi
+}
+
+printf 'HARNESS STATUS\n'
+printf 'Repo Root: %s\n' "$repo_root"
+printf 'HARNESS.md: %s\n' "$(present_status "$repo_root/HARNESS.md" file)"
+printf 'OpenSpec Config: %s\n' "$(present_status "$repo_root/openspec/config.yaml" file)"
+printf 'Spec Dir: %s\n' "$(present_status "$repo_root/docs/superpowers/specs" dir)"
+printf 'Plan Dir: %s\n' "$(present_status "$repo_root/docs/superpowers/plans" dir)"
+printf 'Workflow Dir: %s\n' "$(present_status "$repo_root/harness/workflows" dir)"
+printf 'rtk: %s\n' "$(harness_has_cmd rtk && echo available || echo missing)"
+printf 'openspec: %s\n' "$(harness_has_cmd openspec && echo available || echo missing)"
+
+if harness_has_cmd openspec; then
+  printf '\nActive Changes:\n'
+  openspec list --json
+fi

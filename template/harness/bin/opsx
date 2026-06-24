@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/lib/common.sh"
+
+usage() {
+  cat <<'EOF'
+Usage: ./harness/bin/opsx [action] [args]
+
+Actions:
+  help
+  check
+  status
+  propose
+  apply
+  archive
+  sync
+  explore
+  verify
+EOF
+}
+
+print_section() {
+  printf '== %s ==\n' "$1"
+}
+
+workflow_doc_path() {
+  printf '%s/workflows/%s.md\n' "$ROOT_DIR" "$1"
+}
+
+run_propose() {
+  local change_name="${1:-}"
+
+  if [[ -z "$change_name" ]]; then
+    harness_print_err "Usage: ./harness/bin/opsx propose <change-name>"
+    return 1
+  fi
+
+  harness_require_openspec
+
+  print_section "Harness Workflow"
+  printf 'Action: propose\n'
+  printf 'Workflow doc: %s\n' "$(workflow_doc_path propose)"
+  print_section "OpenSpec"
+  openspec new change "$change_name"
+  print_section "Status"
+  openspec status --change "$change_name" --json
+}
+
+run_explore() {
+  local requested_change="${1:-}"
+  local resolved_change=""
+
+  harness_require_openspec
+
+  print_section "Harness Workflow"
+  printf 'Action: explore\n'
+  printf 'Workflow doc: %s\n' "$(workflow_doc_path explore)"
+
+  if [[ -n "$requested_change" ]]; then
+    resolved_change="$requested_change"
+    print_section "Status"
+    openspec status --change "$resolved_change" --json
+    return 0
+  fi
+
+  print_section "Active Changes"
+  harness_list_changes_json
+}
+
+run_apply() {
+  local requested_change="${1:-}"
+  local resolved_change=""
+
+  harness_require_openspec
+  resolved_change="$(harness_resolve_change "$requested_change")"
+
+  print_section "Harness Workflow"
+  printf 'Action: apply\n'
+  printf 'Change: %s\n' "$resolved_change"
+  printf 'Workflow doc: %s\n' "$(workflow_doc_path apply)"
+  print_section "Status"
+  openspec status --change "$resolved_change" --json
+  print_section "Apply Instructions"
+  openspec instructions apply --change "$resolved_change" --json
+}
+
+run_archive() {
+  local requested_change="${1:-}"
+  local resolved_change=""
+
+  harness_require_openspec
+  resolved_change="$(harness_resolve_change "$requested_change")"
+  shift || true
+
+  print_section "Harness Workflow"
+  printf 'Action: archive\n'
+  printf 'Change: %s\n' "$resolved_change"
+  printf 'Workflow doc: %s\n' "$(workflow_doc_path archive)"
+  print_section "OpenSpec"
+  openspec archive "$resolved_change" "$@"
+}
+
+run_sync() {
+  local requested_change="${1:-}"
+  local resolved_change=""
+  local proposal_path=""
+
+  harness_require_openspec
+  resolved_change="$(harness_resolve_change "$requested_change")"
+  proposal_path="$(harness_abs_repo_path "openspec/changes/$resolved_change/proposal.md")"
+
+  print_section "Harness Workflow"
+  printf 'Action: sync\n'
+  printf 'Change: %s\n' "$resolved_change"
+  printf 'Workflow doc: %s\n' "$(workflow_doc_path sync)"
+  printf 'OpenSpec has no direct sync command; showing sync context instead.\n'
+  print_section "Status"
+  openspec status --change "$resolved_change" --json
+  print_section "Spec List"
+  openspec list --specs
+
+  if [[ -f "$proposal_path" ]]; then
+    print_section "Change Deltas"
+    openspec show "$resolved_change" --type change --deltas-only --json
+  else
+    print_section "Change Deltas"
+    printf 'Proposal artifact missing for %s; delta preview is not available yet.\n' "$resolved_change"
+  fi
+}
+
+action="${1:-help}"
+shift || true
+
+case "$action" in
+  help)
+    usage
+    ;;
+  check)
+    bash "$ROOT_DIR/bin/check" "$@"
+    ;;
+  status)
+    bash "$ROOT_DIR/bin/status" "$@"
+    ;;
+  propose)
+    run_propose "$@"
+    ;;
+  explore)
+    run_explore "$@"
+    ;;
+  apply)
+    run_apply "$@"
+    ;;
+  archive)
+    run_archive "$@"
+    ;;
+  sync)
+    run_sync "$@"
+    ;;
+  verify)
+    bash "$ROOT_DIR/bin/verify" "$@"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

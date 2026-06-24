@@ -1,0 +1,21 @@
+schema: spec-driven
+
+context: |
+  Tech stack: {{TECH_STACK}}
+  Workflow: Harness is the repository entrypoint, OpenSpec owns change artifacts, and Superpowers owns design, TDD, implementation discipline, and verification habits.
+  Change discipline: Keep unrelated active changes separate; do not reuse a business change for workflow maintenance.
+  Verification: Before claiming completion, run the relevant focused tests plus `./harness/bin/opsx verify` for workflow changes.
+
+rules:
+  proposal:
+    - Keep proposals concise and include affected capabilities.
+    - State whether the change affects Harness, OpenSpec artifacts, Superpowers docs, app code, or multiple areas.
+  design:
+    - Explain workflow boundary decisions when changes touch Harness, OpenSpec, or client adapters.
+    - Document alternatives when a script intentionally stays context-only instead of mutating files.
+  specs:
+    - Use SHALL or MUST for normative requirements.
+    - Every requirement must include at least one `#### Scenario`.
+  tasks:
+    - Use parseable checkbox lines in the form `- [ ] X.Y Task description`.
+    - Include a verification task that names the exact command used.
