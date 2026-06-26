@@ -228,6 +228,7 @@ if [[ "$force" -ne 1 ]]; then
     harness \
     openspec/config.yaml \
     .claude/settings.json \
+    .claude/rules \
     .claude/hooks/workflow-reminder.sh \
     .claude/skills/multi-review \
     .claude/skills/compound-knowledge \

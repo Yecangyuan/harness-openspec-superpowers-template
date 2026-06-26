@@ -119,6 +119,7 @@ Shared workflow truth lives in:
 这些客户端入口不是主规范来源，只是薄适配：
 
 - `.claude/`
+- `.claude/rules/*.md`
 - `.cursor/`
 - `.codex/`
 
@@ -126,6 +127,8 @@ Codex 额外有两层仓库级约束：
 
 - `.codex/skills/harness/SKILL.md`：让 Codex 在本仓库任务中优先触发 Harness。
 - `AGENTS.md`：让 Codex 进入仓库时知道本项目的第一入口是 Harness。
+
+`.claude/rules/*.md` 可以承载 Claude 的路径级补充规则，但必须保持聚焦，并继续服从 `HARNESS.md` 与 `harness/*` 的真相层，不能变成第二套完整流程文档。
 
 `multi-review`、`compound-knowledge`、`tech-proposal` 的客户端 skill 都是薄适配器。完整规则在 `harness/skills/`。
 

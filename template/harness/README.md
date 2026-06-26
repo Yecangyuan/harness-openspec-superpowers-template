@@ -35,6 +35,8 @@ harness/
 - 指向匹配的 `harness/workflows/*.md`
 - 指向匹配的 `harness/skills/*.md`
 
+`.claude/rules/*.md` 可以补充路径级 Claude 指导，但也应保持短小、聚焦，并继续指回 Harness 真相层。
+
 ### 3. Shared shell logic stays in `lib/`
 
 只要两个以上脚本会复用某个 shell 逻辑，就放进 `harness/lib/common.sh`，不要在 `bin/` 脚本里复制粘贴。

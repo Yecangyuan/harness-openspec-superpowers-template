@@ -62,6 +62,16 @@ if bash "$ROOT_DIR/install.sh" --target "$existing_target" >/tmp/harness-templat
 fi
 grep -Fq "CLAUDE.md" /tmp/harness-template-existing-claude.out || fail "overwrite refusal should mention CLAUDE.md"
 
+rm -rf "$existing_target"
+existing_target="$(mktemp -d "${TMPDIR:-/tmp}/harness-template-existing.XXXXXX")"
+mkdir -p "$existing_target/.claude/rules"
+printf '# Existing rule\n' > "$existing_target/.claude/rules/markdown-docs.md"
+
+if bash "$ROOT_DIR/install.sh" --target "$existing_target" >/tmp/harness-template-existing-rules.out 2>&1; then
+  fail "install should refuse to overwrite existing .claude/rules"
+fi
+grep -Fq ".claude/rules" /tmp/harness-template-existing-rules.out || fail "overwrite refusal should mention .claude/rules"
+
 cat >"$target_dir/.gitignore" <<'EOF'
 bin/
 /.cursor/
@@ -81,6 +91,9 @@ assert_file "$target_dir/.codex/skills/harness/SKILL.md"
 assert_file "$target_dir/.claude/commands/opsx/verify.md"
 assert_file "$target_dir/.cursor/commands/opsx-verify.md"
 assert_file "$target_dir/.claude/settings.json"
+assert_file "$target_dir/.claude/rules/harness-workflow-layer.md"
+assert_file "$target_dir/.claude/rules/markdown-docs.md"
+assert_file "$target_dir/.claude/rules/superpowers-planning.md"
 assert_executable "$target_dir/.claude/hooks/workflow-reminder.sh"
 assert_file "$target_dir/harness/skills/multi-review/SKILL.md"
 assert_file "$target_dir/harness/skills/multi-review/references/correctness-reviewer.md"
@@ -118,6 +131,8 @@ assert_contains "$target_dir/CLAUDE.md" "Claude Code"
 assert_contains "$target_dir/.harness-template-version" "template_commit:"
 assert_contains "$target_dir/.gitignore" ".harness-template-backups/"
 assert_contains "$target_dir/openspec/config.yaml" "Android Kotlin Gradle"
+assert_contains "$target_dir/.claude/settings.json" "\"respectGitignore\": true"
+assert_contains "$target_dir/.claude/settings.json" "\"plansDirectory\": \"./docs/superpowers/plans\""
 assert_contains "$target_dir/.claude/settings.json" "workflow-reminder.sh"
 assert_contains "$target_dir/harness/skills/multi-review/SKILL.md" "Multi-Persona Code Review"
 assert_contains "$target_dir/harness/skills/compound-knowledge/SKILL.md" "knowledge/index.md"

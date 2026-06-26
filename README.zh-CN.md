@@ -97,7 +97,7 @@ git diff
 - `harness/skills/*`：项目内 `multi-review`、`compound-knowledge` 和 `tech-proposal` 工作流
 - `openspec/config.yaml`：项目级 OpenSpec 配置
 - `.codex/`、`.claude/`、`.cursor/`：轻量客户端适配器
-- `.claude/settings.json` 和 `.claude/hooks/*`：项目级 Claude Code 工作流提醒
+- `.claude/settings.json`、`.claude/hooks/*` 和 `.claude/rules/*`：项目级 Claude Code 共享设置、工作流提醒和路径级补充规则
 - `docs/superpowers/specs` 和 `docs/superpowers/plans`：规划文档目录
 - `AGENTS.md`、`CLAUDE.md` 和 `HARNESS.md`：仓库入口说明
 - `.harness-template-version`：已安装模板元数据和托管文件 hash

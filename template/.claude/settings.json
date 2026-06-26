@@ -1,4 +1,6 @@
 {
+  "respectGitignore": true,
+  "plansDirectory": "./docs/superpowers/plans",
   "hooks": {
     "Stop": [
       {

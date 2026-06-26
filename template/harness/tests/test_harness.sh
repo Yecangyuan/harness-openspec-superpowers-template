@@ -187,6 +187,9 @@ archive_hit="$(find_archived_change "$temp_change")"
 [[ -f "$ROOT_DIR/harness/skills/tech-proposal/SKILL.md" ]] || fail "tech-proposal skill missing"
 [[ -f "$ROOT_DIR/harness/bin/verify" ]] || fail "verify command missing"
 [[ -f "$ROOT_DIR/.codex/skills/harness/SKILL.md" ]] || fail "codex harness skill missing"
+[[ -f "$ROOT_DIR/.claude/rules/harness-workflow-layer.md" ]] || fail "claude harness rule missing"
+[[ -f "$ROOT_DIR/.claude/rules/markdown-docs.md" ]] || fail "claude markdown rule missing"
+[[ -f "$ROOT_DIR/.claude/rules/superpowers-planning.md" ]] || fail "claude superpowers rule missing"
 [[ -x "$ROOT_DIR/.claude/hooks/workflow-reminder.sh" ]] || fail "workflow reminder hook missing or not executable"
 assert_not_git_ignored "harness/bin/verify"
 assert_not_git_ignored ".cursor/commands/opsx-verify.md"
@@ -249,6 +252,8 @@ assert_skill_adapter_points_to ".codex/skills/compound-knowledge/SKILL.md" "comp
 assert_skill_adapter_points_to ".codex/skills/tech-proposal/SKILL.md" "tech-proposal"
 
 hook_settings="$(<"$ROOT_DIR/.claude/settings.json")"
+assert_contains "$hook_settings" "\"respectGitignore\": true" "claude respect gitignore"
+assert_contains "$hook_settings" "\"plansDirectory\": \"./docs/superpowers/plans\"" "claude plans directory"
 assert_contains "$hook_settings" "Stop" "claude hook stop event"
 assert_contains "$hook_settings" "workflow-reminder.sh" "claude hook command"
 

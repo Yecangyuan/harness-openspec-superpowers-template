@@ -97,7 +97,7 @@ Review any backups before deleting them. If you intentionally want to replace lo
 - `harness/skills/*`: project-local multi-review, knowledge, and tech-proposal workflows
 - `openspec/config.yaml`: project-local OpenSpec configuration
 - `.codex/`, `.claude/`, `.cursor/`: thin agent/client adapters
-- `.claude/settings.json` and `.claude/hooks/*`: project-level Claude Code workflow reminders
+- `.claude/settings.json`, `.claude/hooks/*`, and `.claude/rules/*`: project-level Claude Code shared settings, workflow reminders, and path-scoped guidance
 - `docs/superpowers/specs` and `docs/superpowers/plans`: planning document homes
 - `AGENTS.md`, `CLAUDE.md`, and `HARNESS.md`: repository entry instructions
 - `.harness-template-version`: installed template metadata and managed file hashes
