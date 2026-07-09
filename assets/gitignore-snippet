@@ -1,5 +1,5 @@
 
-# Harness/OpenSpec/Superpowers workflow files
+# Harness/OpenSpec/Superpowers shared workflow files
 .harness-template-backups/
 !harness/bin/
 !harness/bin/**

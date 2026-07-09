@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALLER="$ROOT_DIR/install.sh"
+
+usage() {
+  cat <<'EOF'
+Usage: hosi [project-dir] [options]
+
+Examples:
+  hosi .
+  hosi /path/to/project
+  hosi . --upgrade
+  hosi . --shared
+  hosi --install-system
+
+Options:
+  --project-name <name>   Project name used in generated agent instructions
+  --tech-stack <text>     Tech stack summary for openspec/config.yaml
+  --local                 Install local-only workflow files and ignore them in git (default)
+  --shared                Install team-shared workflow files that can be committed
+  --upgrade               Update managed Harness files; back up local modifications
+  --force                 Overwrite existing Harness/OpenSpec workflow files
+  --install-system        Symlink this executable into <prefix>/bin
+  --prefix <dir>          Prefix for --install-system (default: ~/.local)
+  -h, --help              Show this help
+EOF
+}
+
+target_dir=""
+prefix="${HOME}/.local"
+install_system=0
+pass_args=()
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --install-system)
+      install_system=1
+      shift
+      ;;
+    --prefix)
+      prefix="${2:-}"
+      if [[ -z "$prefix" ]]; then
+        echo "Missing value for --prefix" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --project-name|--tech-stack)
+      if [[ -z "${2:-}" ]]; then
+        echo "Missing value for $1" >&2
+        exit 1
+      fi
+      pass_args+=("$1" "$2")
+      shift 2
+      ;;
+    --local|--shared|--upgrade|--force)
+      pass_args+=("$1")
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+    *)
+      if [[ -n "$target_dir" ]]; then
+        echo "Only one project directory can be specified." >&2
+        exit 1
+      fi
+      target_dir="$1"
+      shift
+      ;;
+  esac
+done
+
+if [[ "$install_system" -eq 1 ]]; then
+  bin_dir="$prefix/bin"
+  mkdir -p "$bin_dir"
+  ln -sf "$ROOT_DIR/hosi" "$bin_dir/hosi"
+  echo "Installed hosi at $bin_dir/hosi"
+  echo "Ensure $bin_dir is on PATH."
+  exit 0
+fi
+
+if [[ -z "$target_dir" ]]; then
+  target_dir="."
+fi
+
+exec "$INSTALLER" --target "$target_dir" "${pass_args[@]}"

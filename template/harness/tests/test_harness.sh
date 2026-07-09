@@ -37,6 +37,16 @@ assert_not_git_ignored() {
   fi
 }
 
+assert_git_ignored() {
+  local file="$1"
+  if ! harness_has_cmd git || ! git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    return 0
+  fi
+  if ! git -C "$ROOT_DIR" check-ignore -q "$file"; then
+    fail "$file should be ignored by git"
+  fi
+}
+
 assert_adapter_points_to() {
   local file="$1"
   local workflow="$2"
@@ -191,8 +201,23 @@ archive_hit="$(find_archived_change "$temp_change")"
 [[ -f "$ROOT_DIR/.claude/rules/markdown-docs.md" ]] || fail "claude markdown rule missing"
 [[ -f "$ROOT_DIR/.claude/rules/superpowers-planning.md" ]] || fail "claude superpowers rule missing"
 [[ -x "$ROOT_DIR/.claude/hooks/workflow-reminder.sh" ]] || fail "workflow reminder hook missing or not executable"
-assert_not_git_ignored "harness/bin/verify"
-assert_not_git_ignored ".cursor/commands/opsx-verify.md"
+
+install_mode="$(
+  awk '$1 == "install_mode:" { print $2; exit }' "$ROOT_DIR/.harness-template-version" 2>/dev/null || true
+)"
+case "${install_mode:-shared}" in
+  local)
+    assert_git_ignored "harness/bin/verify"
+    assert_git_ignored ".cursor/commands/opsx-verify.md"
+    ;;
+  shared)
+    assert_not_git_ignored "harness/bin/verify"
+    assert_not_git_ignored ".cursor/commands/opsx-verify.md"
+    ;;
+  *)
+    fail "unknown install mode: $install_mode"
+    ;;
+esac
 
 agents_content="$(<"$ROOT_DIR/AGENTS.md")"
 assert_contains "$agents_content" "HARNESS.md" "AGENTS harness link"

@@ -6,13 +6,13 @@ Reusable bootstrap template for the `Harness + OpenSpec + Superpowers` workflow.
 
 ## Is This Ready Out Of The Box?
 
-The template files are ready to install into a project, but the workflow is not zero-dependency. `install.sh` copies the Harness files into the target repository; it does not install global CLIs or editor applications.
+The template files are ready to install into a git-backed project, but the workflow is not zero-dependency. `hosi` copies the Harness files into the target repository; it does not install global CLIs or editor applications.
 
 Minimum required tools:
 
 | Tool | Required | Purpose |
 | --- | --- | --- |
-| `bash` | Yes | Runs `install.sh` and `harness/bin/*` |
+| `bash` | Yes | Runs `hosi`, `install.sh`, and `harness/bin/*` |
 | `git` | Yes | Supports status, diff, branch, and review workflows |
 | Node.js `>= 20.19.0` plus `npm` | Yes | Required to install and run OpenSpec |
 | `openspec` CLI | Yes | Powers `check`, `status`, `opsx`, and `verify` |
@@ -47,29 +47,33 @@ npm install -g @fission-ai/openspec@latest
 # /plugin install superpowers@claude-plugins-official
 ```
 
-After those prerequisites are present, install this template into a target project and verify it:
+After those prerequisites are present, install the `hosi` command from this template checkout:
 
 ```bash
-./install.sh \
-  --target /path/to/project \
+./hosi --install-system
+```
+
+Make sure `~/.local/bin` is on `PATH`, then install into a target project that already has a git repository:
+
+```bash
+cd /path/to/project
+git init  # only if the project is not already a git repository
+hosi . \
   --project-name "MyProject" \
   --tech-stack "Android Kotlin Gradle"
-
-cd /path/to/project
 ./harness/bin/check
 ./harness/bin/opsx verify
 ```
 
+By default, `hosi` installs in local mode and adds the installed workflow files to `.gitignore`. Use `hosi . --shared` only when you intentionally want the workflow files to be committed and shared with the team.
+
 ## Upgrade An Installed Project
 
-When this template repository changes, projects that already installed it do not update automatically. Use `--upgrade` from the updated template checkout:
+When this template repository changes, projects that already installed it do not update automatically. Use `--upgrade` after updating the template checkout:
 
 ```bash
-./install.sh \
-  --target /path/to/project \
-  --project-name "MyProject" \
-  --tech-stack "Android Kotlin Gradle" \
-  --upgrade
+cd /path/to/project
+hosi . --upgrade
 ```
 
 Upgrade behavior:
@@ -77,13 +81,13 @@ Upgrade behavior:
 - Adds new managed Harness files that are missing from the target project.
 - Updates managed files that still match the previously installed template version.
 - Keeps locally modified managed files unchanged and writes copies under `.harness-template-backups/<timestamp>/`.
-- Writes `.harness-template-version` with the template commit, install time, project metadata, and managed file hashes.
+- Writes `.harness-template-version` with the template commit, install mode, install time, project metadata, and managed file hashes.
 
 After upgrading:
 
 ```bash
 cd /path/to/project
-git diff
+git status --ignored
 ./harness/bin/check
 ./harness/bin/opsx verify
 ```
@@ -100,18 +104,20 @@ Review any backups before deleting them. If you intentionally want to replace lo
 - `.claude/settings.json`, `.claude/hooks/*`, and `.claude/rules/*`: project-level Claude Code shared settings, workflow reminders, and path-scoped guidance
 - `docs/superpowers/specs` and `docs/superpowers/plans`: planning document homes
 - `AGENTS.md`, `CLAUDE.md`, and `HARNESS.md`: repository entry instructions
-- `.harness-template-version`: installed template metadata and managed file hashes
+- `.harness-template-version`: installed template metadata, install mode, and managed file hashes
+
+Default local installs add these files to `.gitignore`. Shared installs use `--shared` and leave the workflow files available for normal git tracking.
 
 ## Install Into A Project
 
 ```bash
-./install.sh \
-  --target /path/to/project \
+cd /path/to/project
+hosi . \
   --project-name "MyProject" \
   --tech-stack "Android Kotlin Gradle"
 ```
 
-Use `--force` only when intentionally replacing an existing Harness/OpenSpec workflow.
+Use `--force` only when intentionally replacing an existing Harness/OpenSpec workflow. `install.sh --target <project-dir>` remains available for compatibility, but `hosi` is the preferred entrypoint.
 
 ## Verify This Template
 

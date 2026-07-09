@@ -6,13 +6,13 @@
 
 ## 是否开箱即用？
 
-模板文件可以直接安装到目标项目中，但完整工作流不是零依赖。`install.sh` 只负责把 Harness 文件复制到目标仓库，不会安装全局 CLI 或编辑器应用。
+模板文件可以直接安装到已有 git 仓库的目标项目中，但完整工作流不是零依赖。`hosi` 负责把 Harness 文件复制到目标仓库，不会安装全局 CLI 或编辑器应用。
 
 最低依赖如下：
 
 | 工具 | 是否必需 | 用途 |
 | --- | --- | --- |
-| `bash` | 必需 | 运行 `install.sh` 和 `harness/bin/*` |
+| `bash` | 必需 | 运行 `hosi`、`install.sh` 和 `harness/bin/*` |
 | `git` | 必需 | 支持状态、diff、分支和评审工作流 |
 | Node.js `>= 20.19.0` 和 `npm` | 必需 | 安装和运行 OpenSpec |
 | `openspec` CLI | 必需 | 驱动 `check`、`status`、`opsx` 和 `verify` |
@@ -47,29 +47,33 @@ npm install -g @fission-ai/openspec@latest
 # /plugin install superpowers@claude-plugins-official
 ```
 
-依赖准备好后，把这个模板安装到目标项目并验证：
+依赖准备好后，先从这个模板仓库安装 `hosi` 命令：
 
 ```bash
-./install.sh \
-  --target /path/to/project \
+./hosi --install-system
+```
+
+确认 `~/.local/bin` 已在 `PATH` 中，然后安装到已有 git 仓库的目标项目并验证：
+
+```bash
+cd /path/to/project
+git init  # 仅当项目还不是 git 仓库时需要
+hosi . \
   --project-name "MyProject" \
   --tech-stack "Android Kotlin Gradle"
-
-cd /path/to/project
 ./harness/bin/check
 ./harness/bin/opsx verify
 ```
 
+默认情况下，`hosi` 使用 local 模式安装，并把安装出来的工作流文件加入 `.gitignore`。只有当你明确希望团队提交并共享这些工作流文件时，才使用 `hosi . --shared`。
+
 ## 升级已安装的项目
 
-这个模板仓库更新后，已经安装过的项目不会自动同步。请在更新后的模板仓库中运行 `--upgrade`：
+这个模板仓库更新后，已经安装过的项目不会自动同步。更新模板仓库后，在目标项目中运行 `--upgrade`：
 
 ```bash
-./install.sh \
-  --target /path/to/project \
-  --project-name "MyProject" \
-  --tech-stack "Android Kotlin Gradle" \
-  --upgrade
+cd /path/to/project
+hosi . --upgrade
 ```
 
 升级行为：
@@ -77,13 +81,13 @@ cd /path/to/project
 - 给目标项目补上缺失的托管 Harness 文件。
 - 更新仍然等于上次安装版本的托管文件。
 - 保留用户本地改过的托管文件，并把副本写入 `.harness-template-backups/<timestamp>/`。
-- 写入 `.harness-template-version`，记录模板 commit、安装时间、项目元数据和托管文件 hash。
+- 写入 `.harness-template-version`，记录模板 commit、安装模式、安装时间、项目元数据和托管文件 hash。
 
 升级后检查：
 
 ```bash
 cd /path/to/project
-git diff
+git status --ignored
 ./harness/bin/check
 ./harness/bin/opsx verify
 ```
@@ -100,18 +104,20 @@ git diff
 - `.claude/settings.json`、`.claude/hooks/*` 和 `.claude/rules/*`：项目级 Claude Code 共享设置、工作流提醒和路径级补充规则
 - `docs/superpowers/specs` 和 `docs/superpowers/plans`：规划文档目录
 - `AGENTS.md`、`CLAUDE.md` 和 `HARNESS.md`：仓库入口说明
-- `.harness-template-version`：已安装模板元数据和托管文件 hash
+- `.harness-template-version`：已安装模板元数据、安装模式和托管文件 hash
+
+默认 local 安装会把这些文件加入 `.gitignore`。如果使用 `--shared`，这些工作流文件会保留为普通 git 可跟踪文件。
 
 ## 安装到项目
 
 ```bash
-./install.sh \
-  --target /path/to/project \
+cd /path/to/project
+hosi . \
   --project-name "MyProject" \
   --tech-stack "Android Kotlin Gradle"
 ```
 
-只有在你明确要替换目标项目里已有的 Harness/OpenSpec 工作流时，才使用 `--force`。
+只有在你明确要替换目标项目里已有的 Harness/OpenSpec 工作流时，才使用 `--force`。`install.sh --target <project-dir>` 仍然保留兼容入口，但推荐使用 `hosi`。
 
 ## 验证这个模板
 

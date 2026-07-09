@@ -1,0 +1,13 @@
+
+# Harness/OpenSpec/Superpowers local workflow files
+.harness-template-version
+.harness-template-backups/
+AGENTS.md
+CLAUDE.md
+HARNESS.md
+harness/
+openspec/
+.claude/
+.codex/
+.cursor/
+docs/superpowers/

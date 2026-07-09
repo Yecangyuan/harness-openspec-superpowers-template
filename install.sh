@@ -3,13 +3,15 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$ROOT_DIR/template"
-SNIPPET_FILE="$ROOT_DIR/assets/gitignore-snippet"
+SNIPPET_SHARED_FILE="$ROOT_DIR/assets/gitignore-snippet"
+SNIPPET_LOCAL_FILE="$ROOT_DIR/assets/gitignore-local-snippet"
 
 target_dir=""
 project_name=""
 tech_stack="Project-specific stack"
 force=0
 upgrade=0
+install_mode="local"
 
 usage() {
   cat <<'EOF'
@@ -18,6 +20,8 @@ Usage: ./install.sh --target <project-dir> [options]
 Options:
   --project-name <name>   Project name used in generated agent instructions
   --tech-stack <text>     Tech stack summary for openspec/config.yaml
+  --local                 Install as local-only workflow files and ignore them in git (default)
+  --shared                Install as team-shared workflow files that can be committed
   --upgrade               Update managed Harness files; back up local modifications
   --force                 Overwrite existing Harness/OpenSpec workflow files
   -h, --help              Show this help
@@ -40,6 +44,14 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --force)
       force=1
+      shift
+      ;;
+    --local)
+      install_mode="local"
+      shift
+      ;;
+    --shared)
+      install_mode="shared"
       shift
       ;;
     --upgrade)
@@ -66,6 +78,21 @@ fi
 
 mkdir -p "$target_dir"
 target_dir="$(cd "$target_dir" && pwd)"
+
+require_git_repo() {
+  if ! command -v git >/dev/null 2>&1; then
+    echo "git is required. Install git, then run this installer again." >&2
+    exit 1
+  fi
+
+  if ! git -C "$target_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Target is not inside a git repository: $target_dir" >&2
+    echo "Run 'git init' in the project first, then run this installer again." >&2
+    exit 1
+  fi
+}
+
+require_git_repo
 
 if [[ -z "$project_name" ]]; then
   project_name="$(basename "$target_dir")"
@@ -123,6 +150,7 @@ write_manifest() {
   {
     printf 'template_commit: %s\n' "$(template_commit)"
     printf 'installed_at: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    printf 'install_mode: %s\n' "$install_mode"
     printf 'project_name: %s\n' "$project_name"
     printf 'tech_stack: %s\n' "$tech_stack"
     printf 'files:\n'
@@ -137,12 +165,29 @@ chmod_installed_tools() {
 
 ensure_gitignore_snippet() {
   local gitignore_path="$target_dir/.gitignore"
+  local snippet_file marker
+
+  case "$install_mode" in
+    local)
+      snippet_file="$SNIPPET_LOCAL_FILE"
+      marker="Harness/OpenSpec/Superpowers local workflow files"
+      ;;
+    shared)
+      snippet_file="$SNIPPET_SHARED_FILE"
+      marker="Harness/OpenSpec/Superpowers shared workflow files"
+      ;;
+    *)
+      echo "Unknown install mode: $install_mode" >&2
+      exit 1
+      ;;
+  esac
+
   if [[ ! -f "$gitignore_path" ]]; then
     touch "$gitignore_path"
   fi
 
-  if ! grep -Fq "Harness/OpenSpec/Superpowers workflow files" "$gitignore_path"; then
-    cat "$SNIPPET_FILE" >> "$gitignore_path"
+  if ! grep -Fq "$marker" "$gitignore_path"; then
+    cat "$snippet_file" >> "$gitignore_path"
   fi
 }
 
@@ -209,6 +254,7 @@ upgrade_template_files() {
 
   printf 'Upgraded Harness + OpenSpec + Superpowers workflow in %s\n' "$target_dir"
   printf 'Summary: %s added, %s updated, %s local modification(s) kept with backups.\n' "$added" "$updated" "$skipped"
+  printf 'Install mode: %s\n' "$install_mode"
   if [[ -d "$backup_root" ]]; then
     printf 'Backups: %s\n' "$backup_root"
   fi
@@ -263,4 +309,5 @@ chmod_installed_tools
 ensure_gitignore_snippet
 
 echo "Installed Harness + OpenSpec + Superpowers workflow into $target_dir"
+echo "Install mode: $install_mode"
 echo "Next: cd \"$target_dir\" && ./harness/bin/check"
