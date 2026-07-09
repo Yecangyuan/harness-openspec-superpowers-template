@@ -29,6 +29,15 @@ The Harness actions are:
 - OpenSpec owns change state, artifacts, instructions, validation, and archive.
 - Superpowers owns design discipline, TDD, implementation planning, execution, and reviews.
 
+## Git Discipline
+
+After modifying code or repository-tracked files, run the relevant verification and create a focused git commit before reporting the work as complete.
+
+- Do not leave completed code changes uncommitted unless the user explicitly asks not to commit.
+- Stage only files that belong to the current change.
+- Keep each commit focused on one coherent change.
+- Commit locally only unless the user explicitly asks to push.
+
 ## Skill Priority
 
 For new feature work, do not go directly from brainstorming to Superpowers `writing-plans`. First route through Harness and create or inspect the OpenSpec change when appropriate.

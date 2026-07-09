@@ -49,6 +49,13 @@ Project-level Claude Code shared settings live in `.claude/settings.json`.
 
 The Stop hook only emits workflow reminders; it does not write global `~/.claude` files and does not block shutdown.
 
+## Git Discipline
+
+Follow the shared `AGENTS.md` git rule: after modifying code or repository-tracked files, run the relevant verification and create a focused git commit before reporting the work as complete.
+
+- Report the commit hash in the final response.
+- If the user asks for changes but not push, commit locally only.
+
 ## Skill Adapters
 
 The `.claude/skills/*` entries are thin adapters. Treat `HARNESS.md`, `harness/workflows/*`, and `harness/skills/*` as the source of truth.

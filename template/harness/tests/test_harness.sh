@@ -198,6 +198,10 @@ agents_content="$(<"$ROOT_DIR/AGENTS.md")"
 assert_contains "$agents_content" "HARNESS.md" "AGENTS harness link"
 assert_contains "$agents_content" "./harness/bin/check" "AGENTS check link"
 assert_contains "$agents_content" "./harness/bin/opsx" "AGENTS opsx link"
+assert_contains "$agents_content" "create a focused git commit before reporting the work as complete" "AGENTS git discipline"
+
+claude_content="$(<"$ROOT_DIR/CLAUDE.md")"
+assert_contains "$claude_content" "create a focused git commit before reporting the work as complete" "CLAUDE git discipline"
 
 codex_harness_content="$(<"$ROOT_DIR/.codex/skills/harness/SKILL.md")"
 assert_contains "$codex_harness_content" "Use first" "codex harness trigger"
