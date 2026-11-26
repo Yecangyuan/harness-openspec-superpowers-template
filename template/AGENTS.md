@@ -15,6 +15,7 @@ The Harness actions are:
 
 - `explore [change-name]`
 - `propose <change-name>`
+- `review-spec <change-name>` for specification and task review before implementation
 - `apply [change-name]`
 - `sync [change-name]`
 - `archive [change-name] [flags]`

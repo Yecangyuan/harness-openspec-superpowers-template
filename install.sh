@@ -8,10 +8,11 @@ SNIPPET_LOCAL_FILE="$ROOT_DIR/assets/gitignore-local-snippet"
 
 target_dir=""
 project_name=""
-tech_stack="Project-specific stack"
+default_tech_stack="Project-specific stack"
+unset tech_stack
 force=0
 upgrade=0
-install_mode="local"
+install_mode=""
 
 usage() {
   cat <<'EOF'
@@ -85,7 +86,7 @@ require_git_repo() {
     exit 1
   fi
 
-  if ! git -C "$target_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if [[ "$(git -C "$target_dir" rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]]; then
     echo "Target is not inside a git repository: $target_dir" >&2
     echo "Run 'git init' in the project first, then run this installer again." >&2
     exit 1
@@ -94,9 +95,32 @@ require_git_repo() {
 
 require_git_repo
 
-if [[ -z "$project_name" ]]; then
-  project_name="$(basename "$target_dir")"
+manifest_path() {
+  printf '%s/.harness-template-version\n' "$target_dir"
+}
+
+manifest_value() {
+  awk -v prefix="$1: " -v fallback="$2" '
+    $0 == "files:" { exit }
+    index($0, prefix) == 1 {
+      print substr($0, length(prefix) + 1)
+      found = 1
+      exit
+    }
+    END { if (!found) print fallback }
+  ' "$(manifest_path)"
+}
+
+if [[ "$upgrade" -eq 1 && -f "$(manifest_path)" ]]; then
+  project_name="${project_name:-$(manifest_value project_name "")}"
+  tech_stack="${tech_stack-$(manifest_value tech_stack "$default_tech_stack")}"
+  # Installers that wrote manifests before install_mode supported shared installs only.
+  install_mode="${install_mode:-$(manifest_value install_mode shared)}"
 fi
+
+project_name="${project_name:-$(basename "$target_dir")}"
+tech_stack="${tech_stack-$default_tech_stack}"
+install_mode="${install_mode:-local}"
 
 escape_sed_replacement() {
   printf '%s' "$1" | sed 's/[\/&]/\\&/g'
@@ -121,10 +145,6 @@ file_hash() {
 
 template_commit() {
   git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || printf 'unknown'
-}
-
-manifest_path() {
-  printf '%s/.harness-template-version\n' "$target_dir"
 }
 
 manifest_hash_for() {
@@ -186,9 +206,13 @@ ensure_gitignore_snippet() {
     touch "$gitignore_path"
   fi
 
-  if ! grep -Fq "$marker" "$gitignore_path"; then
-    cat "$snippet_file" >> "$gitignore_path"
+  if grep -Fxq "# $marker" "$gitignore_path"; then
+    return 0
   fi
+  if [[ "$install_mode" == "shared" ]] && grep -Fxq '# Harness/OpenSpec/Superpowers workflow files' "$gitignore_path"; then
+    return 0
+  fi
+  cat "$snippet_file" >> "$gitignore_path"
 }
 
 render_all_template_files() {
@@ -230,7 +254,8 @@ upgrade_template_files() {
     previous_hash="$(manifest_hash_for "$rel_path")"
     current_hash="$(file_hash "$target_file")"
 
-    if [[ -n "$previous_hash" && "$current_hash" != "$previous_hash" ]]; then
+    # A retry may see files already written by an earlier, incomplete upgrade.
+    if [[ -n "$previous_hash" && "$current_hash" != "$previous_hash" && "$current_hash" != "$new_hash" ]]; then
       mkdir -p "$backup_root/$(dirname "$rel_path")"
       cp "$target_file" "$backup_root/$rel_path"
       printf '%s %s\n' "$previous_hash" "$rel_path" >> "$hashes_file"
@@ -279,13 +304,16 @@ if [[ "$force" -ne 1 ]]; then
     .claude/skills/multi-review \
     .claude/skills/compound-knowledge \
     .claude/skills/tech-proposal \
+    .claude/skills/review-spec \
     .codex/skills/harness \
     .codex/skills/multi-review \
     .codex/skills/compound-knowledge \
     .codex/skills/tech-proposal \
+    .codex/skills/review-spec \
     .cursor/skills/multi-review \
     .cursor/skills/compound-knowledge \
-    .cursor/skills/tech-proposal
+    .cursor/skills/tech-proposal \
+    .cursor/skills/review-spec
   do
     if [[ -e "$target_dir/$path" ]]; then
       echo "Refusing to overwrite existing $path; rerun with --force if intended." >&2

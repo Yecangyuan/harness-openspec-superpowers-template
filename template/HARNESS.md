@@ -30,11 +30,13 @@
 `opsx` 支持的动作：
 
 - `propose <change-name>`：创建 change 并立刻展示 status
+- `review-spec <change-name>`：校验评审材料，进入实现前的需求、设计和任务评审
 - `apply [change-name]`：拉取 status 与 apply instructions
 - `archive [change-name] [flags]`：执行真实 archive 流程
 - `sync [change-name]`：拉取 sync 所需上下文
 - `explore [change-name]`：列出 active changes 或查看单个 change 状态
 - `verify`：运行 Harness 预检、Harness 测试和 OpenSpec 验证门禁
+- `verify --change <name> [--evidence <file>]`：检查单个 change 的文档、任务和验收证据，给出归档建议
 
 ## Responsibility Boundary
 
@@ -91,6 +93,7 @@
 
 ```bash
 ./harness/bin/opsx propose <change-name>
+./harness/bin/opsx review-spec <change-name>
 ./harness/bin/opsx apply [change-name]
 ./harness/bin/opsx archive [change-name] -y
 ./harness/bin/opsx sync [change-name]
@@ -103,6 +106,7 @@
 Shared workflow truth lives in:
 
 - `harness/workflows/propose.md`
+- `harness/workflows/review-spec.md`
 - `harness/workflows/apply.md`
 - `harness/workflows/archive.md`
 - `harness/workflows/sync.md`

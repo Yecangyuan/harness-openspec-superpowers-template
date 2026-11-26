@@ -28,10 +28,11 @@ Use these actions:
 
 - `./harness/bin/opsx explore [change-name]` for investigation and status.
 - `./harness/bin/opsx propose <change-name>` for new scoped changes.
+- Review requirements, design, and tasks before implementing complex changes using `harness/workflows/review-spec.md`.
 - `./harness/bin/opsx apply [change-name]` for implementation context.
 - `./harness/bin/opsx sync [change-name]` for spec-sync context.
 - `./harness/bin/opsx archive [change-name] [flags]` for completed changes.
-- `./harness/bin/opsx verify` for workflow verification before completion.
+- Verify workflow changes or assess a change for archive using `harness/workflows/verify.md`.
 
 ## Skill Disambiguation
 

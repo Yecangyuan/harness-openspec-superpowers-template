@@ -13,11 +13,12 @@ Actions:
   check
   status
   propose
+  review-spec <change-name>
   apply
   archive
   sync
   explore
-  verify
+  verify [--change <name> [--evidence <file>]]
 EOF
 }
 
@@ -86,6 +87,26 @@ run_apply() {
   openspec instructions apply --change "$resolved_change" --json
 }
 
+run_review_spec() {
+  local usage="Usage: ./harness/bin/opsx review-spec <change-name>"
+  if [[ "$#" -eq 1 && "$1" == "--help" ]]; then
+    printf '%s\n' "$usage"
+    return 0
+  fi
+  if [[ "$#" -ne 1 || -z "$1" || "$1" == -* ]]; then
+    harness_print_err "$usage"
+    return 1
+  fi
+
+  harness_require_openspec
+  harness_check_required_cmd node
+  print_section "Harness Workflow"
+  printf 'Action: review-spec\n'
+  printf 'Change: %s\n' "$1"
+  printf 'Workflow doc: %s\n' "$(workflow_doc_path review-spec)"
+  node "$ROOT_DIR/lib/review-spec.mjs" "$(harness_repo_root)" "$1"
+}
+
 run_archive() {
   local requested_change="${1:-}"
   local resolved_change=""
@@ -145,6 +166,9 @@ case "$action" in
     ;;
   propose)
     run_propose "$@"
+    ;;
+  review-spec)
+    run_review_spec "$@"
     ;;
   explore)
     run_explore "$@"

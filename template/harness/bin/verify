@@ -10,6 +10,11 @@ print_section() {
 
 repo_root="$(harness_repo_root)"
 
+if [[ "$#" -gt 0 ]]; then
+  harness_check_required_cmd node
+  exec node "$ROOT_DIR/lib/verify-change.mjs" "$repo_root" "$@"
+fi
+
 printf 'HARNESS VERIFY\n'
 printf 'Repo Root: %s\n' "$repo_root"
 

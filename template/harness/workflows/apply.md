@@ -8,6 +8,7 @@
 
 - 已经有对应的 active change
 - proposal / design / tasks 至少已达到可执行状态
+- 复杂 change 进入实现前，先完成 [规格评审](review-spec.md)。
 
 ## Preflight
 
@@ -54,17 +55,18 @@ openspec instructions apply --change "<change-name>" --json
 openspec status --change "<change-name>" --json
 ```
 
-### 4. Validate before claiming completion
+### 4. Verify before claiming completion
 
 ```bash
-openspec validate "<change-name>" --json
+./harness/bin/opsx verify --change "<change-name>"
 ```
+
+按 [verify 工作流](verify.md) 补齐各场景的实现和测试证据。
 
 ## Expected Outcome
 
 - 变更对应的 tasks 被逐步勾选
-- `openspec validate "<change-name>" --json` 不再报结构性错误
-- change 可以进入 `archive`
+- change 验收报告为 `READY` 后，可以进入 `archive`
 
 ## Failure Handling
 

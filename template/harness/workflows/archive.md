@@ -16,7 +16,6 @@
 ./harness/bin/check
 ./harness/bin/status
 openspec status --change "<change-name>" --json
-./harness/bin/opsx archive [change-name] -y
 ```
 
 ## Steps
@@ -24,8 +23,10 @@ openspec status --change "<change-name>" --json
 ### 1. Validate one last time
 
 ```bash
-openspec validate "<change-name>" --json
+./harness/bin/opsx verify --change "<change-name>"
 ```
+
+按 [verify 工作流](verify.md) 完成验收，并查阅归档建议和剩余检查。
 
 ### 2. Archive and update main specs
 

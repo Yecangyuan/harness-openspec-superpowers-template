@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source_path="${BASH_SOURCE[0]}"
+while [[ -L "$source_path" ]]; do
+  source_dir="$(cd -P "$(dirname "$source_path")" && pwd)"
+  source_path="$(readlink "$source_path")"
+  if [[ "$source_path" != /* ]]; then
+    source_path="$source_dir/$source_path"
+  fi
+done
+
+ROOT_DIR="$(cd -P "$(dirname "$source_path")" && pwd)"
 INSTALLER="$ROOT_DIR/install.sh"
 
 usage() {
@@ -12,8 +21,11 @@ Examples:
   hosi .
   hosi /path/to/project
   hosi . --upgrade
+  hosi /path/to/project --register
+  hosi --upgrade-all
   hosi . --shared
   hosi --install-system
+  hosi /path/to/project --install-system
 
 Options:
   --project-name <name>   Project name used in generated agent instructions
@@ -21,16 +33,120 @@ Options:
   --local                 Install local-only workflow files and ignore them in git (default)
   --shared                Install team-shared workflow files that can be committed
   --upgrade               Update managed Harness files; back up local modifications
+  --register              Record an existing installation in the local project registry
+  --upgrade-all           Upgrade all registered projects from this template checkout
   --force                 Overwrite existing Harness/OpenSpec workflow files
-  --install-system        Symlink this executable into <prefix>/bin
+  --install-system        Link hosi into <prefix>/bin and install a project if given
   --prefix <dir>          Prefix for --install-system (default: ~/.local)
   -h, --help              Show this help
+
+Environment:
+  HOSI_STATE_DIR          State directory (default: $XDG_STATE_HOME/hosi or ~/.local/state/hosi)
 EOF
+}
+
+install_system_link() {
+  local bin_dir="$prefix/bin"
+  mkdir -p "$bin_dir"
+  ln -sf "$ROOT_DIR/hosi" "$bin_dir/hosi"
+  printf 'Installed hosi at %s/hosi\n' "$bin_dir"
+  case ":$PATH:" in
+    *":$bin_dir:"*) ;;
+    *) printf 'Add %s to PATH to run hosi by name.\n' "$bin_dir" ;;
+  esac
+}
+
+run_project() (
+  local project_dir="$1" action="$2"
+  shift 2
+  local key entry lock registered=0
+  key="$(printf '%s' "$project_dir" | shasum -a 256 | awk '{print $1}')" || return 1
+  entry="$projects_dir/$key.project"
+  lock="$state_dir/locks/$key"
+
+  mkdir -p "$projects_dir" "$state_dir/locks" || return 1
+  if ! mkdir "$lock" 2>/dev/null; then
+    printf 'Cannot lock %s (another hosi run may be active): %s\n' "$project_dir" "$lock" >&2
+    return 1
+  fi
+  trap 'rmdir "$lock"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
+  if [[ -L "$entry" && "$(readlink "$entry")" == "$project_dir" ]]; then
+    registered=1
+  elif [[ -e "$entry" || -L "$entry" ]]; then
+    printf 'Unexpected registry entry: %s\n' "$entry" >&2
+    return 1
+  fi
+
+  case "$action" in
+    upgrade-all)
+      if [[ ! -f "$project_dir/.harness-template-version" ]] ||
+          [[ "$(cd -P -- "$project_dir" && pwd -P)" != "$project_dir" ]]; then
+        printf 'Skipped: project path or installation manifest is unavailable.\n'
+        return 2
+      fi
+      "$INSTALLER" --target "$project_dir" --upgrade || return 1
+      return 0
+      ;;
+    register)
+      if [[ ! -f "$project_dir/.harness-template-version" ]] ||
+          [[ "$(git -C "$project_dir" rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]]; then
+        printf 'No installed Harness workflow in a git work tree at %s\n' "$project_dir" >&2
+        return 1
+      fi
+      ;;
+    install)
+      "$INSTALLER" --target "$project_dir" "$@" || return 1
+      ;;
+  esac
+
+  if [[ "$registered" -eq 0 ]]; then
+    ln -s "$project_dir" "$entry" || return 1
+    printf 'Registered project: %s\n' "$project_dir"
+  fi
+)
+
+upgrade_all_projects() {
+  local record project_dir result
+  local upgraded=0 skipped=0 failed=0
+
+  for record in "$projects_dir"/*.project; do
+    [[ -L "$record" ]] || continue
+    if ! project_dir="$(readlink "$record")" || [[ "$project_dir" != /* ]]; then
+      printf 'Invalid project entry: %s\n' "$record" >&2
+      failed=$((failed + 1))
+      continue
+    fi
+
+    printf '\n== %s ==\n' "$project_dir"
+    result=0
+    run_project "$project_dir" upgrade-all || result=$?
+    case "$result" in
+      0) upgraded=$((upgraded + 1)) ;;
+      2) skipped=$((skipped + 1)) ;;
+      130|143) return "$result" ;;
+      *)
+        printf 'Upgrade failed: %s\n' "$project_dir" >&2
+        failed=$((failed + 1))
+        ;;
+    esac
+  done
+
+  if [[ "$upgraded" -eq 0 && "$skipped" -eq 0 && "$failed" -eq 0 ]]; then
+    printf 'No projects registered in %s\n' "$projects_dir"
+  fi
+  printf 'Upgrade summary: %s upgraded, %s skipped, %s failed.\n' "$upgraded" "$skipped" "$failed"
+  [[ "$failed" -eq 0 ]]
 }
 
 target_dir=""
 prefix="${HOME}/.local"
 install_system=0
+prefix_set=0
+upgrade_all=0
+register=0
 pass_args=()
 
 while [[ "$#" -gt 0 ]]; do
@@ -41,11 +157,20 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --prefix)
       prefix="${2:-}"
+      prefix_set=1
       if [[ -z "$prefix" ]]; then
         echo "Missing value for --prefix" >&2
         exit 1
       fi
       shift 2
+      ;;
+    --upgrade-all)
+      upgrade_all=1
+      shift
+      ;;
+    --register)
+      register=1
+      shift
       ;;
     --project-name|--tech-stack)
       if [[ -z "${2:-}" ]]; then
@@ -83,17 +208,41 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-if [[ "$install_system" -eq 1 ]]; then
-  bin_dir="$prefix/bin"
-  mkdir -p "$bin_dir"
-  ln -sf "$ROOT_DIR/hosi" "$bin_dir/hosi"
-  echo "Installed hosi at $bin_dir/hosi"
-  echo "Ensure $bin_dir is on PATH."
+state_dir="${HOSI_STATE_DIR:-${XDG_STATE_HOME:-${HOME}/.local/state}/hosi}"
+projects_dir="$state_dir/projects"
+
+if [[ "$upgrade_all" -eq 1 ]]; then
+  if [[ -n "$target_dir" || "$#" -ne 0 || "${#pass_args[@]}" -ne 0 ||
+        "$install_system" -eq 1 || "$prefix_set" -eq 1 || "$register" -eq 1 ]]; then
+    echo "Use --upgrade-all on its own." >&2
+    exit 1
+  fi
+  upgrade_all_projects
+  exit
+fi
+
+if [[ "$register" -eq 1 && ( "$install_system" -eq 1 || "$prefix_set" -eq 1 || "${#pass_args[@]}" -ne 0 || "$#" -ne 0 ) ]]; then
+  echo "Use --register with only a project directory." >&2
+  exit 1
+fi
+
+if [[ "$install_system" -eq 1 && -z "$target_dir" ]]; then
+  install_system_link
   exit 0
 fi
 
-if [[ -z "$target_dir" ]]; then
-  target_dir="."
+target_dir="${target_dir:-.}"
+if [[ "$register" -eq 0 ]]; then
+  mkdir -p -- "$target_dir"
+fi
+target_dir="$(cd -P -- "$target_dir" && pwd -P)"
+if [[ "$register" -eq 1 ]]; then
+  run_project "$target_dir" register
+else
+  # Bash 3.2 treats an empty array as unset under set -u.
+  run_project "$target_dir" install ${pass_args[@]+"${pass_args[@]}"}
 fi
 
-exec "$INSTALLER" --target "$target_dir" "${pass_args[@]}"
+if [[ "$install_system" -eq 1 ]]; then
+  install_system_link
+fi

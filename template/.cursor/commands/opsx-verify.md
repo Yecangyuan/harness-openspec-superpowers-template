@@ -2,7 +2,7 @@
 name: /opsx-verify
 id: opsx-verify
 category: Workflow
-description: Thin Harness adapter for running repository workflow verification
+description: Verify the repository workflow or assess an OpenSpec change for archive
 ---
 
 This command is a thin Harness adapter.
@@ -17,6 +17,6 @@ Before acting:
 1. Read `HARNESS.md`
 2. Run `./harness/bin/check`
 3. Read `harness/workflows/verify.md`
-4. Use `./harness/bin/opsx verify`
+4. Run `./harness/bin/opsx verify` for the repository or follow the change verification steps when a change is named
 
 Do not maintain a second copy of the workflow here. Follow the matching commands from `harness/workflows/verify.md`.
